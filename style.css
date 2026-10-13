@@ -274,29 +274,29 @@ body {
 .word-display {
   font-family: var(--font-word);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.05;
   color: #111827;
   letter-spacing: 0.5px;
   word-break: normal;
   overflow-wrap: normal;
   hyphens: none;
-  max-width: 96%;
+  max-width: 98%;
   margin: auto 0;
   text-align: center;
 }
 
-/* Kelime Boyutları */
+/* Kelime Boyutları (1-2 tık daha büyük) */
 .word-len-short {
-  font-size: clamp(3.8rem, 14vw, 7.8rem);
+  font-size: clamp(4.4rem, 17vw, 9.2rem);
 }
 .word-len-medium {
-  font-size: clamp(2.9rem, 10.5vw, 6rem);
+  font-size: clamp(3.5rem, 13vw, 7.2rem);
 }
 .word-len-long {
-  font-size: clamp(2.2rem, 8vw, 4.8rem);
+  font-size: clamp(2.7rem, 9.8vw, 5.8rem);
 }
 .word-len-xlong {
-  font-size: clamp(1.6rem, 6.2vw, 3.8rem);
+  font-size: clamp(2.0rem, 7.6vw, 4.5rem);
 }
 
 .word-pop {
@@ -519,16 +519,16 @@ body.app-fullscreen .card-wrapper,
     padding: 4px 10px;
   }
   .word-len-short {
-    font-size: clamp(2.8rem, 16vh, 4.8rem);
+    font-size: clamp(3.4rem, 20vh, 5.6rem);
   }
   .word-len-medium {
-    font-size: clamp(2.4rem, 13vh, 4rem);
+    font-size: clamp(2.8rem, 16.5vh, 4.6rem);
   }
   .word-len-long {
-    font-size: clamp(1.8rem, 11vh, 3.2rem);
+    font-size: clamp(2.3rem, 13.5vh, 3.8rem);
   }
   .word-len-xlong {
-    font-size: clamp(1.4rem, 9.5vh, 2.6rem);
+    font-size: clamp(1.8rem, 11vh, 3.1rem);
   }
   .bottom-bar {
     padding: 4px 10px;
@@ -536,5 +536,26 @@ body.app-fullscreen .card-wrapper,
   .read-btn {
     padding: 5px 16px;
     font-size: 0.82rem;
+  }
+}
+
+/* Tablet Optimizasyonları */
+@media (min-width: 651px) and (max-width: 1024px) {
+  .card-wrapper {
+    width: 96%;
+    height: 94%;
+    padding: 24px 16px;
+  }
+  .word-len-short {
+    font-size: clamp(5.4rem, 16vw, 9.8rem);
+  }
+  .word-len-medium {
+    font-size: clamp(4.4rem, 13vw, 8rem);
+  }
+  .word-len-long {
+    font-size: clamp(3.4rem, 10.5vw, 6.2rem);
+  }
+  .word-len-xlong {
+    font-size: clamp(2.5rem, 8vw, 4.9rem);
   }
 }
