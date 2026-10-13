@@ -1,4 +1,4 @@
-# 🕹️ Retro Kelime Öğrenme & Hızlı Okuma İstasyonu
+# 🕹️ Retro Kelime Öğrenme & Hızlı Okuma İstasyonu (SEVGİLİM ÖĞRETMEN ONUN İÇİN)
 
 Bu web uygulaması, öğrencilerin kelimeleri hızlı ve eğlenceli bir şekilde okumalarını ve öğrenmelerini sağlamak için tasarlanmış retro arcade tarzında bir web sitesidir.
 
