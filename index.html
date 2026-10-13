@@ -39,14 +39,14 @@
 
     <!-- Üst Eylem Butonları -->
     <div class="top-actions">
-      <button id="btnShuffle" class="retro-btn btn-text-hide" title="Kelimeleri Karıştır">
-        <span>🔀</span><span>Karıştır</span>
+      <button id="btnShuffle" class="retro-btn" title="Kelimeleri Karıştır">
+        <span>🔀</span><span class="btn-label">Karıştır</span>
       </button>
-      <button id="btnSpeak" class="retro-btn icon-only" title="Sesli Oku">
-        <span>🔊</span>
+      <button id="btnSoundToggle" class="retro-btn" title="Ses Aç / Kapat">
+        <span id="soundIcon">🔇</span><span class="btn-label" id="soundLabel">Sessiz</span>
       </button>
-      <button id="btnFullscreen" class="retro-btn btn-text-hide" title="Tam Ekran Yap">
-        <span>⛶</span><span>Tam Ekran</span>
+      <button id="btnFullscreen" class="retro-btn" title="Tam Ekran Yap">
+        <span id="fsIcon">⛶</span><span class="btn-label">Tam Ekran</span>
       </button>
     </div>
   </header>
@@ -62,7 +62,7 @@
 
       <!-- Dokunma İpucu -->
       <div class="touch-hint">
-        <span>👆 Ekrana dokun</span> veya <span class="key-chip">BOŞLUK</span> sıradaki kelime
+        <span>👆 Dokun</span> veya <span class="key-chip">BOŞLUK</span> sıradaki kelime
       </div>
     </div>
 
@@ -71,7 +71,7 @@
   </main>
 
   <!-- ALT KONTROL VE OKUDUM BARI -->
-  <footer class="bottom-bar">
+  <footer id="bottomBar" class="bottom-bar">
     <div class="nav-controls">
       <button id="btnPrev" class="retro-btn" title="Önceki Kelime">
         <span>◀</span> Önceki
@@ -90,11 +90,10 @@
         Sonraki <span>▶</span>
       </button>
 
-      <!-- Okunan Kelime Skoru -->
-      <div class="stats-display" title="Başarıyla Okunan Kelime Sayısı">
-        <span>⭐ OKUNDU:</span>
-        <span id="statsCount" class="stats-count">0</span>
-      </div>
+      <!-- Tam Ekrandan Çıkış Butonu (Yalnızca Tam Ekranda Görünür) -->
+      <button id="btnExitFsBottom" class="retro-btn icon-only fs-only-btn" title="Tam Ekrandan Çık">
+        <span>🗗</span>
+      </button>
     </div>
   </footer>
 

@@ -1,5 +1,5 @@
 // ==========================================================================
-// RETRO OKUMA UYGULAMASI - JAVASCRIPT ÇEKİRDEK KODU (MOBİL & TABLET UYUMLU)
+// RETRO OKUMA UYGULAMASI - JAVASCRIPT ÇEKİRDEK KODU
 // ==========================================================================
 
 // Durum Değişkenleri
@@ -8,6 +8,7 @@ let activeWordList = [];
 let currentIndex = 0;
 let readCount = 0;
 let isShuffled = false;
+let isSoundEnabled = false; // VARSAYILAN OLARAK SES KAPALI
 let autoAdvanceTimer = null;
 
 // DOM Elementleri
@@ -17,14 +18,16 @@ const mainStage = document.getElementById("mainStage");
 const setSelector = document.getElementById("setSelector");
 const wordMetaBadge = document.getElementById("wordMetaBadge");
 const wordCounterBadge = document.getElementById("wordCounterBadge");
-const statsCount = document.getElementById("statsCount");
 const praiseToast = document.getElementById("praiseToast");
 
 const btnPrev = document.getElementById("btnPrev");
 const btnNext = document.getElementById("btnNext");
 const btnRead = document.getElementById("btnRead");
 const btnFullscreen = document.getElementById("btnFullscreen");
-const btnSpeak = document.getElementById("btnSpeak");
+const btnExitFsBottom = document.getElementById("btnExitFsBottom");
+const btnSoundToggle = document.getElementById("btnSoundToggle");
+const soundIcon = document.getElementById("soundIcon");
+const soundLabel = document.getElementById("soundLabel");
 const btnShuffle = document.getElementById("btnShuffle");
 
 // Rastgele Tebrik Cümleleri
@@ -40,7 +43,7 @@ const PRAISES = [
 ];
 
 // --------------------------------------------------------------------------
-// 8-BIT RETRO SES MOTORU (Web Audio API)
+// 8-BIT RETRO SES MOTORU (Sadece Ses Açıksa Çalar)
 // --------------------------------------------------------------------------
 let audioCtx = null;
 
@@ -55,6 +58,8 @@ function getAudioContext() {
 }
 
 function playRetroSound(type = 'click') {
+  if (!isSoundEnabled) return; // Ses kapalıysa hiçbir şey çalma
+
   try {
     const ctx = getAudioContext();
     const now = ctx.currentTime;
@@ -74,36 +79,35 @@ function playRetroSound(type = 'click') {
       osc.stop(now + 0.05);
     } else if (type === 'success') {
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(587.33, now); // D5
-      osc.frequency.setValueAtTime(880, now + 0.08); // A5
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.setValueAtTime(880, now + 0.08);
       gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
       osc.start(now);
-      osc.stop(now + 0.32);
+      osc.stop(now + 0.3);
     }
   } catch (err) {
-    // Ses desteklenmiyorsa sessizce geç
+    // Ses desteklenmiyorsa sessiz kal
+  }
+}
+
+// Ses Aç / Kapat Toggle
+function toggleSound() {
+  isSoundEnabled = !isSoundEnabled;
+  if (isSoundEnabled) {
+    soundIcon.textContent = "🔊";
+    if (soundLabel) soundLabel.textContent = "Ses Açık";
+    btnSoundToggle.classList.add("is-active");
+    playRetroSound('click');
+  } else {
+    soundIcon.textContent = "🔇";
+    if (soundLabel) soundLabel.textContent = "Sessiz";
+    btnSoundToggle.classList.remove("is-active");
   }
 }
 
 // --------------------------------------------------------------------------
-// TÜRKÇE SESLENDİRME (Web Speech API)
-// --------------------------------------------------------------------------
-function speakCurrentWord() {
-  if (!('speechSynthesis' in window)) return;
-  
-  const currentWord = activeWordList[currentIndex]?.word || "";
-  if (!currentWord) return;
-
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(currentWord);
-  utterance.lang = "tr-TR";
-  utterance.rate = 0.85;
-  window.speechSynthesis.speak(utterance);
-}
-
-// --------------------------------------------------------------------------
-// KELİME LİSTESİ HAZIRLAMA VE YÖNETİMİ
+// KELİME LİSTESİ YÖNETİMİ
 // --------------------------------------------------------------------------
 function initSetSelector() {
   setSelector.innerHTML = "";
@@ -123,6 +127,7 @@ function initSetSelector() {
   setSelector.addEventListener("change", (e) => {
     currentSetIndex = e.target.value;
     loadWordSet(currentSetIndex);
+    e.target.blur();
   });
 }
 
@@ -162,7 +167,7 @@ function shuffleArray(array) {
 }
 
 // --------------------------------------------------------------------------
-// KELİME GÖSTERİMİ VE AKILLI FONT BOYUTLANDIRMA
+// KELİME GÖSTERİMİ
 // --------------------------------------------------------------------------
 function updateWordFontSize(wordText) {
   wordDisplay.classList.remove("word-len-short", "word-len-medium", "word-len-long", "word-len-xlong");
@@ -194,14 +199,12 @@ function renderCurrentWord() {
   wordCounterBadge.textContent = `${currentIndex + 1} / ${activeWordList.length}`;
 }
 
-// Sonraki kelime
 function nextWord(playSound = true) {
   if (playSound) playRetroSound('click');
   currentIndex = (currentIndex + 1) % activeWordList.length;
   renderCurrentWord();
 }
 
-// Önceki kelime
 function prevWord(playSound = true) {
   if (playSound) playRetroSound('click');
   currentIndex = (currentIndex - 1 + activeWordList.length) % activeWordList.length;
@@ -209,7 +212,7 @@ function prevWord(playSound = true) {
 }
 
 // --------------------------------------------------------------------------
-// OKUNDU & KONFETİ PATLAMASI
+// OKUNDU & KONFETİ
 // --------------------------------------------------------------------------
 function triggerConfetti() {
   if (typeof confetti === 'function') {
@@ -285,11 +288,12 @@ function runFallbackConfetti() {
 }
 
 function markAsRead(e) {
-  if (e) e.stopPropagation();
+  if (e) {
+    e.stopPropagation();
+    if (e.currentTarget) e.currentTarget.blur();
+  }
 
   readCount++;
-  statsCount.textContent = readCount;
-
   playRetroSound('success');
   triggerConfetti();
 
@@ -307,44 +311,50 @@ function markAsRead(e) {
 // --------------------------------------------------------------------------
 // TAM EKRAN (FULLSCREEN) YÖNETİMİ
 // --------------------------------------------------------------------------
+function enterFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) {
+    el.requestFullscreen().catch(() => {});
+  } else if (el.webkitRequestFullscreen) {
+    el.webkitRequestFullscreen();
+  }
+  document.body.classList.add("app-fullscreen");
+}
+
+function exitFullscreen() {
+  if (document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  }
+  document.body.classList.remove("app-fullscreen");
+}
+
 function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    const el = document.documentElement;
-    if (el.requestFullscreen) {
-      el.requestFullscreen();
-    } else if (el.webkitRequestFullscreen) {
-      el.webkitRequestFullscreen();
-    }
-    btnFullscreen.innerHTML = `<span>🗗</span>`;
+  if (!document.fullscreenElement && !document.body.classList.contains("app-fullscreen")) {
+    enterFullscreen();
   } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    }
-    btnFullscreen.innerHTML = `<span>⛶</span>`;
+    exitFullscreen();
   }
 }
 
 document.addEventListener("fullscreenchange", () => {
   if (document.fullscreenElement) {
-    btnFullscreen.innerHTML = `<span>🗗</span>`;
+    document.body.classList.add("app-fullscreen");
   } else {
-    btnFullscreen.innerHTML = `<span>⛶</span>`;
+    document.body.classList.remove("app-fullscreen");
   }
 });
 
 // --------------------------------------------------------------------------
-// DOKUNMATİK JESTLER (SWIPE SOLA / SAĞA)
+// DOKUNMATİK JESTLER (SWIPE)
 // --------------------------------------------------------------------------
 let touchStartX = 0;
 let touchStartY = 0;
-let touchMoved = false;
 
 mainStage.addEventListener("touchstart", (e) => {
   touchStartX = e.changedTouches[0].screenX;
   touchStartY = e.changedTouches[0].screenY;
-  touchMoved = false;
 }, { passive: true });
 
 mainStage.addEventListener("touchend", (e) => {
@@ -353,57 +363,60 @@ mainStage.addEventListener("touchend", (e) => {
   const diffX = touchEndX - touchStartX;
   const diffY = touchEndY - touchStartY;
 
-  // Eğer belirgin bir sağa/sola kaydırma (swipe) varsa
-  if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+  if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
     if (diffX < 0) {
-      nextWord(true); // Sola kaydırınca sonraki
+      nextWord(true);
     } else {
-      prevWord(true); // Sağa kaydırınca önceki
+      prevWord(true);
     }
   } else if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
-    // Sadece dokunulduysa sonraki kelime
     nextWord(true);
   }
 }, { passive: true });
 
-// Masaüstü tıklandığında geçiş
-mainStage.addEventListener("click", (e) => {
-  // Dokunmatik cihazlarda touchend hallettiği için click'te çift tetiklemeyi önle
+mainStage.addEventListener("click", () => {
   if (window.matchMedia("(pointer: coarse)").matches) return;
   nextWord(true);
 });
 
-// Alt gezinme butonları
+// Buton Olayları (blur çağrısı ile basılı kalma önlenir)
 btnNext.addEventListener("click", (e) => {
   e.stopPropagation();
+  e.currentTarget.blur();
   nextWord(true);
 });
 
 btnPrev.addEventListener("click", (e) => {
   e.stopPropagation();
+  e.currentTarget.blur();
   prevWord(true);
 });
 
-// Okundu butonu
 btnRead.addEventListener("click", markAsRead);
 
-// Tam Ekran butonu
 btnFullscreen.addEventListener("click", (e) => {
   e.stopPropagation();
+  e.currentTarget.blur();
   toggleFullscreen();
 });
 
-// Sesli okuma
-btnSpeak.addEventListener("click", (e) => {
+btnExitFsBottom.addEventListener("click", (e) => {
   e.stopPropagation();
-  speakCurrentWord();
+  e.currentTarget.blur();
+  exitFullscreen();
 });
 
-// Karışık mod butonu
+btnSoundToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  e.currentTarget.blur();
+  toggleSound();
+});
+
 btnShuffle.addEventListener("click", (e) => {
   e.stopPropagation();
+  e.currentTarget.blur();
   isShuffled = !isShuffled;
-  btnShuffle.style.background = isShuffled ? "#c8e6c9" : "#ffffff";
+  btnShuffle.classList.toggle("is-active", isShuffled);
   loadWordSet(currentSetIndex);
 });
 
@@ -423,17 +436,18 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "f" || e.key === "F") {
     e.preventDefault();
     toggleFullscreen();
+  } else if (e.key === "Escape") {
+    exitFullscreen();
   }
 });
 
-// Ekran döndürüldüğünde font boyutunu yeniden kontrol et
 window.addEventListener("resize", () => {
   if (activeWordList[currentIndex]) {
     updateWordFontSize(activeWordList[currentIndex].word);
   }
 });
 
-// Başlangıç Yüklemesi
+// Başlangıç
 window.addEventListener("DOMContentLoaded", () => {
   initSetSelector();
   loadWordSet("all");
