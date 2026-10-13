@@ -1,9 +1,9 @@
 // ==========================================================================
-// RETRO OKUMA UYGULAMASI - JAVASCRIPT ÇEKİRDEK KODU
+// RETRO OKUMA UYGULAMASI - JAVASCRIPT ÇEKİRDEK KODU (MOBİL & TABLET UYUMLU)
 // ==========================================================================
 
 // Durum Değişkenleri
-let currentSetIndex = "all"; // 'all' veya set id'si
+let currentSetIndex = "all";
 let activeWordList = [];
 let currentIndex = 0;
 let readCount = 0;
@@ -40,40 +40,49 @@ const PRAISES = [
 ];
 
 // --------------------------------------------------------------------------
-// 8-BIT RETRO SES MOTORU (Web Audio API - Harici dosya gerektirmez)
+// 8-BIT RETRO SES MOTORU (Web Audio API)
 // --------------------------------------------------------------------------
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
 
-function playRetroSound(type = 'click') {
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+  return audioCtx;
+}
 
-  const now = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+function playRetroSound(type = 'click') {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
 
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
 
-  if (type === 'click') {
-    // Hafif sevimli retro bip sesi
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, now);
-    osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-    osc.start(now);
-    osc.stop(now + 0.05);
-  } else if (type === 'success') {
-    // 8-bit Mario/Arcade coin melodisi
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(587.33, now); // D5
-    osc.frequency.setValueAtTime(880, now + 0.08); // A5
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-    osc.start(now);
-    osc.stop(now + 0.35);
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.start(now);
+      osc.stop(now + 0.05);
+    } else if (type === 'success') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(587.33, now); // D5
+      osc.frequency.setValueAtTime(880, now + 0.08); // A5
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    }
+  } catch (err) {
+    // Ses desteklenmiyorsa sessizce geç
   }
 }
 
@@ -89,7 +98,7 @@ function speakCurrentWord() {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(currentWord);
   utterance.lang = "tr-TR";
-  utterance.rate = 0.85; // Öğrencinin rahat duyması için hafif tane tane
+  utterance.rate = 0.85;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -101,10 +110,10 @@ function initSetSelector() {
 
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = `📚 TÜM KELİMELER (${ALL_WORDS.length} Kelime)`;
+  allOption.textContent = `📚 TÜM KELİMELER (${ALL_WORDS.length})`;
   setSelector.appendChild(allOption);
 
-  WORD_SETS.forEach((set, index) => {
+  WORD_SETS.forEach((set) => {
     const opt = document.createElement("option");
     opt.value = set.id;
     opt.textContent = `${set.title} (${set.words.length})`;
@@ -153,17 +162,32 @@ function shuffleArray(array) {
 }
 
 // --------------------------------------------------------------------------
-// KELİME GÖSTERİMİ
+// KELİME GÖSTERİMİ VE AKILLI FONT BOYUTLANDIRMA
 // --------------------------------------------------------------------------
+function updateWordFontSize(wordText) {
+  wordDisplay.classList.remove("word-len-short", "word-len-medium", "word-len-long", "word-len-xlong");
+
+  const len = wordText.length;
+  if (len <= 4) {
+    wordDisplay.classList.add("word-len-short");
+  } else if (len <= 8) {
+    wordDisplay.classList.add("word-len-medium");
+  } else if (len <= 13) {
+    wordDisplay.classList.add("word-len-long");
+  } else {
+    wordDisplay.classList.add("word-len-xlong");
+  }
+}
+
 function renderCurrentWord() {
   if (!activeWordList || activeWordList.length === 0) return;
 
   const currentItem = activeWordList[currentIndex];
   
-  // Kelime animasyonunu tazele
   wordDisplay.classList.remove("word-pop");
-  void wordDisplay.offsetWidth; // reflow tetikle
+  void wordDisplay.offsetWidth; // Reflow
   wordDisplay.textContent = currentItem.word;
+  updateWordFontSize(currentItem.word);
   wordDisplay.classList.add("word-pop");
 
   wordMetaBadge.textContent = currentItem.category;
@@ -188,12 +212,11 @@ function prevWord(playSound = true) {
 // OKUNDU & KONFETİ PATLAMASI
 // --------------------------------------------------------------------------
 function triggerConfetti() {
-  // Eğer harici confetti kütüphanesi varsa onu kullan, yoksa canvas fallback
   if (typeof confetti === 'function') {
     confetti({
-      particleCount: 80,
+      particleCount: 75,
       spread: 70,
-      origin: { y: 0.75 },
+      origin: { y: 0.8 },
       colors: ['#ffeb3b', '#ff4081', '#00e676', '#00b0ff', '#7c4dff']
     });
   } else {
@@ -201,7 +224,6 @@ function triggerConfetti() {
   }
 }
 
-// İnternet olmasa da çalışan minimal konfeti
 function runFallbackConfetti() {
   const canvas = document.createElement('canvas');
   canvas.style.position = 'fixed';
@@ -220,18 +242,18 @@ function runFallbackConfetti() {
   const pieces = [];
   const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#4caf50', '#ffeb3b', '#ff9800'];
 
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 60; i++) {
     pieces.push({
       x: window.innerWidth / 2,
-      y: window.innerHeight * 0.75,
-      w: Math.random() * 12 + 6,
-      h: Math.random() * 8 + 4,
+      y: window.innerHeight * 0.8,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 7 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
-      vx: (Math.random() - 0.5) * 16,
-      vy: -(Math.random() * 15 + 8),
-      gravity: 0.5,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -(Math.random() * 14 + 6),
+      gravity: 0.45,
       rotation: Math.random() * 360,
-      rotSpeed: (Math.random() - 0.5) * 10
+      rotSpeed: (Math.random() - 0.5) * 8
     });
   }
 
@@ -253,7 +275,7 @@ function runFallbackConfetti() {
     });
 
     frames++;
-    if (frames < 75) {
+    if (frames < 70) {
       requestAnimationFrame(update);
     } else {
       canvas.remove();
@@ -262,19 +284,15 @@ function runFallbackConfetti() {
   update();
 }
 
-// "Okudum" Butonu Eylemi
 function markAsRead(e) {
-  if (e) e.stopPropagation(); // Ekrana dokunma olayını engelle
+  if (e) e.stopPropagation();
 
-  // Skor artışı
   readCount++;
   statsCount.textContent = readCount;
 
-  // Ses ve Konfeti
   playRetroSound('success');
   triggerConfetti();
 
-  // Tebrik Rozeti Göster
   const randomPraise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
   praiseToast.textContent = randomPraise;
   praiseToast.classList.add("show");
@@ -282,8 +300,8 @@ function markAsRead(e) {
   clearTimeout(autoAdvanceTimer);
   autoAdvanceTimer = setTimeout(() => {
     praiseToast.classList.remove("show");
-    nextWord(false); // Otomatik bir sonraki kelimeye geçir
-  }, 650);
+    nextWord(false);
+  }, 600);
 }
 
 // --------------------------------------------------------------------------
@@ -291,31 +309,67 @@ function markAsRead(e) {
 // --------------------------------------------------------------------------
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.warn("Fullscreen hatası:", err);
-    });
-    btnFullscreen.innerHTML = `<span>🗗</span> Çık`;
+    const el = document.documentElement;
+    if (el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    }
+    btnFullscreen.innerHTML = `<span>🗗</span>`;
   } else {
     if (document.exitFullscreen) {
       document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
     }
-    btnFullscreen.innerHTML = `<span>⛶</span> Tam Ekran`;
+    btnFullscreen.innerHTML = `<span>⛶</span>`;
   }
 }
 
 document.addEventListener("fullscreenchange", () => {
   if (document.fullscreenElement) {
-    btnFullscreen.innerHTML = `<span>🗗</span> Çık`;
+    btnFullscreen.innerHTML = `<span>🗗</span>`;
   } else {
-    btnFullscreen.innerHTML = `<span>⛶</span> Tam Ekran`;
+    btnFullscreen.innerHTML = `<span>⛶</span>`;
   }
 });
 
 // --------------------------------------------------------------------------
-// ETKİNLİK DİNLEYİCİLERİ (EVENTS)
+// DOKUNMATİK JESTLER (SWIPE SOLA / SAĞA)
 // --------------------------------------------------------------------------
-// Ekrana dokunulduğunda sıradaki kelimeye geçiş
-mainStage.addEventListener("click", () => {
+let touchStartX = 0;
+let touchStartY = 0;
+let touchMoved = false;
+
+mainStage.addEventListener("touchstart", (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+  touchMoved = false;
+}, { passive: true });
+
+mainStage.addEventListener("touchend", (e) => {
+  const touchEndX = e.changedTouches[0].screenX;
+  const touchEndY = e.changedTouches[0].screenY;
+  const diffX = touchEndX - touchStartX;
+  const diffY = touchEndY - touchStartY;
+
+  // Eğer belirgin bir sağa/sola kaydırma (swipe) varsa
+  if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+    if (diffX < 0) {
+      nextWord(true); // Sola kaydırınca sonraki
+    } else {
+      prevWord(true); // Sağa kaydırınca önceki
+    }
+  } else if (Math.abs(diffX) < 15 && Math.abs(diffY) < 15) {
+    // Sadece dokunulduysa sonraki kelime
+    nextWord(true);
+  }
+}, { passive: true });
+
+// Masaüstü tıklandığında geçiş
+mainStage.addEventListener("click", (e) => {
+  // Dokunmatik cihazlarda touchend hallettiği için click'te çift tetiklemeyi önle
+  if (window.matchMedia("(pointer: coarse)").matches) return;
   nextWord(true);
 });
 
@@ -353,7 +407,7 @@ btnShuffle.addEventListener("click", (e) => {
   loadWordSet(currentSetIndex);
 });
 
-// Klavye Kısayolları (Masaüstü için)
+// Klavye Kısayolları
 window.addEventListener("keydown", (e) => {
   if (e.target.tagName === 'SELECT') return;
 
@@ -369,6 +423,13 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "f" || e.key === "F") {
     e.preventDefault();
     toggleFullscreen();
+  }
+});
+
+// Ekran döndürüldüğünde font boyutunu yeniden kontrol et
+window.addEventListener("resize", () => {
+  if (activeWordList[currentIndex]) {
+    updateWordFontSize(activeWordList[currentIndex].word);
   }
 });
 
