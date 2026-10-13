@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Retro temalı, tam ekran hızlı okuma ve kelime öğrenme uygulaması.">
+  <meta name="theme-color" content="#ffea79">
+  <title>Retro Kelime Öğrenme | Hızlı Okuma İstasyonu</title>
+
+  <!-- Google Fonts: Retro Oyun & Net Okuma Fontları -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Press+Start+2P&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Stil Dosyası -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Hafif Canvas Confetti (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Retro CRT Scanline Efekti -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ÜST KONTROL ÇUBUĞU -->
+  <header class="top-bar">
+    <div class="brand">
+      <span class="brand-badge">🕹️ OKUMA KONSOLU</span>
+    </div>
+
+    <!-- Kelime Grubu Seçimi -->
+    <div class="category-selector-wrapper">
+      <select id="setSelector" class="retro-select" title="Kelime Seti Seç"></select>
+    </div>
+
+    <!-- Üst Eylem Butonları -->
+    <div class="top-actions">
+      <button id="btnShuffle" class="retro-btn" title="Kelimeleri Karıştır">
+        <span>🔀</span> Karıştır
+      </button>
+      <button id="btnSpeak" class="retro-btn icon-only" title="Sesli Oku">
+        <span>🔊</span>
+      </button>
+      <button id="btnFullscreen" class="retro-btn" title="Tam Ekran Yap">
+        <span>⛶</span> Tam Ekran
+      </button>
+    </div>
+  </header>
+
+  <!-- ANA TAM EKRAN ÇALIŞMA ALANI (DOKUNMA ALANI) -->
+  <main id="mainStage" class="main-stage" title="Sıradaki kelimeye geçmek için ekrana dokunun">
+    <div id="wordCard" class="card-wrapper">
+      <div id="wordMetaBadge" class="word-meta-badge">Kategori</div>
+      <div id="wordCounterBadge" class="word-counter-badge">1 / 280</div>
+
+      <!-- DEV KELİME -->
+      <h1 id="wordDisplay" class="word-display">Kelime</h1>
+
+      <!-- Dokunma İpucu -->
+      <div class="touch-hint">
+        <span>👆 Ekrana dokun</span> veya <span class="key-chip">BOŞLUK</span> sıradaki kelime
+      </div>
+    </div>
+
+    <!-- BAŞARI TEBRİK ROZETİ (AFERİN POPUP) -->
+    <div id="praiseToast" class="praise-toast" aria-live="polite">AFERİN! ⭐</div>
+  </main>
+
+  <!-- ALT KONTROL VE OKUDUM BARI -->
+  <footer class="bottom-bar">
+    <div class="nav-controls">
+      <button id="btnPrev" class="retro-btn" title="Önceki Kelime">
+        <span>◀</span> Önceki
+      </button>
+    </div>
+
+    <!-- MERKEZDE DEV OKUDUM BUTONU -->
+    <div class="read-action-wrapper">
+      <button id="btnRead" class="read-btn" title="Okudum (Konfeti Patlat)">
+        <span>🎉</span> OKUDUM! <span>⭐</span>
+      </button>
+    </div>
+
+    <div class="nav-controls">
+      <button id="btnNext" class="retro-btn" title="Sonraki Kelime">
+        Sonraki <span>▶</span>
+      </button>
+
+      <!-- Okunan Kelime Skoru -->
+      <div class="stats-display" title="Başarıyla Okunan Kelime Sayısı">
+        <span>⭐ OKUNDU:</span>
+        <span id="statsCount" class="stats-count">0</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scriptler -->
+  <script src="words.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
